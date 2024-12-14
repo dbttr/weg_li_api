@@ -1,0 +1,25 @@
+[package]
+name = "weg_li_api"
+version = "0.1.0"
+edition = "2021"
+categories = ["api-bindings"]
+description = "Making working with the weg.li API more convenient"
+keywords = ["wegli", "weg.li", "weg-li"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/dbttr/weg_li_api"
+
+[dependencies]
+anyhow = "1.0.94"
+chrono = { version = "0.4.39", features = ["serde"] }
+futures-util = "0.3.31"
+reqwest = { version = "0.12.9", features = ["gzip", "json", "stream"] }
+serde = { version = "1.0.215", features = ["derive"] }
+serde_json = "1.0.133"
+thiserror = "2.0.6"
+tokio = { version = "1.42.0", features = ["full"] }
+url = "2.5.4"
+zip = "2.2.1"
+
+[dev-dependencies]
+mockito = "1.6.1"
