@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 categories = ["api-bindings"]
 description = "Making working with the weg.li API more convenient"
+documentation = "https://docs.rs/weg_li_api"
 keywords = ["wegli", "weg-li"]
 license = "MIT"
 readme = "README.md"
