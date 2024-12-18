@@ -4,6 +4,8 @@
 
 It currently focuses on the read APIs, implementing the defined GET methods.
 
+This inofficial project is not affiliated with or endorsed by weg.li.
+
 ## Basic usage
 
 1. Get a personalized API token from [weg.li](https://www.weg.li/). You can find it on your [Profile page](https://www.weg.li/user) after creating an account.
