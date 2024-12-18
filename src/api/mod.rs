@@ -3,7 +3,7 @@ mod district;
 pub mod error;
 mod export;
 mod notice;
-mod request;
+pub mod request;
 mod util;
 
 use std::path::PathBuf;
