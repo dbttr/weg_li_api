@@ -4,9 +4,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ApiError {
-    #[error("too many requests")]
+    #[error("API signals to wait (429 or 503)")]
     // if available, returns the Retry-After header value
-    TooManyRequests(Option<u64>),
+    ApiRequestsWait(Option<u64>),
     #[error("reqwest error")]
     Reqwest(reqwest::Error),
     #[error("received unexpted response code `{0}`")]

@@ -17,26 +17,21 @@ pub const DEFAULT_RETRY_SETTINGS: RetrySettings = RetrySettings {
     backoff_multiplier: 2,
 };
 
-async fn err_response(response: Response) -> ApiError {
-    if [429, 503].contains(&response.status().as_u16()) {
-        let retry_after_header = response
-            .headers()
-            .iter()
-            .find(|header| header.0 == "Retry-After");
-        match retry_after_header {
-            None => return ApiError::TooManyRequests(None),
-            Some(header) => match header.1.to_str() {
-                Err(_) => return ApiError::TooManyRequests(None),
-                Ok(header_str) => match header_str.parse::<u64>() {
-                    Err(_) => return ApiError::TooManyRequests(None),
-                    Ok(retry_after_value) => {
-                        return ApiError::TooManyRequests(Some(retry_after_value))
-                    }
-                },
+fn get_retry_after_header(response: &Response) -> Option<u64> {
+    match response
+        .headers()
+        .iter()
+        .find(|header| header.0 == "Retry-After")
+    {
+        None => None,
+        Some((_, header_value)) => match header_value.to_str() {
+            Err(_) => None,
+            Ok(value_str) => match value_str.parse::<u64>() {
+                Err(_) => None,
+                Ok(val) => Some(val),
             },
-        }
+        },
     }
-    return ApiError::UnexpectedStatusCode(response.status());
 }
 
 pub async fn execute_request(
@@ -56,14 +51,22 @@ pub async fn execute_request(
     };
 
     if !response.status().is_success() {
+        if [429, 503].contains(&response.status().as_u16()) {
+            match get_retry_after_header(&response) {
+                None => return Err(ApiError::ApiRequestsWait(None)),
+                Some(retry_after_value) => {
+                    return Err(ApiError::ApiRequestsWait(Some(retry_after_value)))
+                }
+            }
+        }
         match retry_data {
-            None => return Err(err_response(response).await),
+            None => return Err(ApiError::UnexpectedStatusCode(response.status())),
             Some(retry_data) => {
                 let mut iter_retry_data = retry_data.clone();
                 if iter_retry_data.retry_count == iter_retry_data.settings.max_retries
                     || iter_retry_data.settings.max_retries == 0
                 {
-                    return Err(err_response(response).await);
+                    return Err(ApiError::UnexpectedStatusCode(response.status()));
                 }
                 iter_retry_data.retry_count += 1;
 
