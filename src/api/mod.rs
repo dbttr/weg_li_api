@@ -1,25 +1,30 @@
 mod charge;
 mod district;
 pub mod error;
-mod export;
+pub mod export;
 mod notice;
 pub mod request;
-mod util;
+pub mod util;
 
-use std::path::PathBuf;
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
+use anyhow::anyhow;
 use charge::{get_charge_from_wegli_api, get_charges_from_wegli_api};
 use district::{get_district_from_wegli_api, get_districts_from_wegli_api};
 use error::ApiError;
 use export::{download_latest_export_from_wegli, get_exports_from_wegli_api};
 use notice::{get_notice_from_wegli_api, get_notices_from_wegli_api};
+use url::Url;
 
 use crate::types::{
     charge::Charge, district::District, export::Export, notice::Notice, request::RetrySettings,
 };
 
 pub struct WegLiApiClient {
-    api_url: String,
+    api_url: Url,
     api_token: String,
     /// Retry settings for exponential backoff are activated by default (initial_backoff_ms: 300, max_retries: 5, backoff_multiplier: 2).
     /// If you do not want to retry, provide a retry_settings argument with max_retries set to 0.
@@ -31,12 +36,15 @@ impl WegLiApiClient {
         api_url: &String,
         api_token: &String,
         retry_settings: Option<RetrySettings>,
-    ) -> Self {
-        WegLiApiClient {
-            api_url: api_url.to_string(),
+    ) -> Result<Self, anyhow::Error> {
+        Ok(WegLiApiClient {
+            api_url: match Url::from_str(&api_url) {
+                Err(error) => return Err(anyhow!(error)),
+                Ok(url) => url,
+            },
             api_token: api_token.to_string(),
             retry_settings,
-        }
+        })
     }
     /// Get a single notice of the authenticated user by its token
     pub async fn get_notice(&self, notice_token: &String) -> Result<Notice, ApiError> {
@@ -112,7 +120,7 @@ impl WegLiApiClient {
     /// Returns the path to the zip file if `unzip` is `false``, otherwise the path to the first (and as of current weg.li behavior only) .csv file extracted.
     pub async fn download_latest_export(
         &self,
-        path: &String,
+        path: &Path,
         public: bool,
         unzip: bool,
     ) -> Result<PathBuf, anyhow::Error> {

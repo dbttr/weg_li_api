@@ -1,3 +1,5 @@
+use url::Url;
+
 use crate::types::{
     charge::{Charge, ChargeJson},
     request::RetrySettings,
@@ -9,7 +11,7 @@ use super::{
 };
 
 pub async fn get_charge_from_wegli_api(
-    api_url: &String,
+    api_url: &Url,
     api_token: &String,
     tbnr: &String,
     retry_settings: &Option<RetrySettings>,
@@ -22,7 +24,7 @@ pub async fn get_charge_from_wegli_api(
         },
     };
     let request_builder = reqwest::Client::new()
-        .get(format!("{}{}{}", api_url, "/charges/", tbnr))
+        .get(format!("{}{}{}", api_url, "charges/", tbnr))
         .header("X-API-KEY", api_token);
 
     let response = match execute_request(&request_builder, &Some(retry_data)).await {
@@ -45,7 +47,7 @@ pub async fn get_charge_from_wegli_api(
 }
 
 pub async fn get_charges_from_wegli_api(
-    api_url: &String,
+    api_url: &Url,
     api_token: &String,
     retry_settings: &Option<RetrySettings>,
 ) -> Result<Vec<Charge>, ApiError> {
@@ -57,7 +59,7 @@ pub async fn get_charges_from_wegli_api(
         },
     };
     let request_builder = reqwest::Client::new()
-        .get(format!("{}{}", api_url, "/charges"))
+        .get(format!("{}{}", api_url, "charges"))
         .header("X-API-KEY", api_token);
 
     let response = match execute_request(&request_builder, &Some(retry_data)).await {
@@ -87,6 +89,10 @@ pub async fn get_charges_from_wegli_api(
 
 #[cfg(test)]
 mod tests {
+
+    use std::str::FromStr;
+
+    use url::Url;
 
     use super::{get_charge_from_wegli_api, get_charges_from_wegli_api};
 
@@ -124,9 +130,8 @@ mod tests {
             )
             .create_async()
             .await;
-
         let response = get_charge_from_wegli_api(
-            &server.url(),
+            &Url::from_str(&server.url()).unwrap(),
             &"any_api_key".to_string(),
             &"101000".to_string(),
             &None,
@@ -194,10 +199,13 @@ mod tests {
             )
             .create_async()
             .await;
-
-        let response = get_charges_from_wegli_api(&server.url(), &"any_api_key".to_string(), &None)
-            .await
-            .unwrap();
+        let response = get_charges_from_wegli_api(
+            &Url::from_str(&server.url()).unwrap(),
+            &"any_api_key".to_string(),
+            &None,
+        )
+        .await
+        .unwrap();
         assert_eq!(&response[0].fine, &35.0);
         mock.assert();
     }

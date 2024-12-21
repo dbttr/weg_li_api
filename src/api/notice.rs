@@ -1,3 +1,5 @@
+use url::Url;
+
 use crate::types::{
     notice::{Notice, NoticeJson},
     request::RetrySettings,
@@ -9,7 +11,7 @@ use super::{
 };
 
 pub async fn get_notice_from_wegli_api(
-    api_url: &String,
+    api_url: &Url,
     api_token: &String,
     notice_token: &String,
     retry_settings: &Option<RetrySettings>,
@@ -22,7 +24,7 @@ pub async fn get_notice_from_wegli_api(
         },
     };
     let request_builder = reqwest::Client::new()
-        .get(format!("{}{}{}", api_url, "/notices/", notice_token))
+        .get(format!("{}{}{}", api_url, "notices/", notice_token))
         .header("X-API-KEY", api_token);
 
     let response = match execute_request(&request_builder, &Some(retry_data)).await {
@@ -45,7 +47,7 @@ pub async fn get_notice_from_wegli_api(
 }
 
 pub async fn get_notices_from_wegli_api(
-    api_url: &String,
+    api_url: &Url,
     api_token: &String,
     retry_settings: &Option<RetrySettings>,
 ) -> Result<Vec<Notice>, ApiError> {
@@ -57,7 +59,7 @@ pub async fn get_notices_from_wegli_api(
         },
     };
     let request_builder = reqwest::Client::new()
-        .get(format!("{}{}", api_url, "/notices"))
+        .get(format!("{}{}", api_url, "notices"))
         .header("X-API-KEY", api_token);
 
     let response = match execute_request(&request_builder, &Some(retry_data)).await {
@@ -87,6 +89,10 @@ pub async fn get_notices_from_wegli_api(
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
+    use url::Url;
+
     use super::get_notice_from_wegli_api;
 
     #[tokio::test]
@@ -153,7 +159,7 @@ mod tests {
             .await;
 
         let response = get_notice_from_wegli_api(
-            &server.url(),
+            &Url::from_str(&server.url()).unwrap(),
             &"any_api_key".to_string(),
             &"abc123".to_string(),
             &None,

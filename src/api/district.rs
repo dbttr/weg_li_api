@@ -1,3 +1,5 @@
+use url::Url;
+
 use crate::types::{
     district::{District, DistrictJson},
     request::RetrySettings,
@@ -9,7 +11,7 @@ use super::{
 };
 
 pub async fn get_district_from_wegli_api(
-    api_url: &String,
+    api_url: &Url,
     api_token: &String,
     zip: &String,
     retry_settings: &Option<RetrySettings>,
@@ -22,7 +24,7 @@ pub async fn get_district_from_wegli_api(
         },
     };
     let request_builder = reqwest::Client::new()
-        .get(format!("{}{}{}", api_url, "/districts/", zip))
+        .get(format!("{}{}{}", api_url, "districts/", zip))
         .header("X-API-KEY", api_token);
 
     let response = match execute_request(&request_builder, &Some(retry_data)).await {
@@ -45,7 +47,7 @@ pub async fn get_district_from_wegli_api(
 }
 
 pub async fn get_districts_from_wegli_api(
-    api_url: &String,
+    api_url: &Url,
     api_token: &String,
     retry_settings: &Option<RetrySettings>,
 ) -> Result<Vec<District>, ApiError> {
@@ -57,7 +59,7 @@ pub async fn get_districts_from_wegli_api(
         },
     };
     let request_builder = reqwest::Client::new()
-        .get(format!("{}{}", api_url, "/districts"))
+        .get(format!("{}{}", api_url, "districts"))
         .header("X-API-KEY", api_token);
 
     let response = match execute_request(&request_builder, &Some(retry_data)).await {
@@ -87,6 +89,10 @@ pub async fn get_districts_from_wegli_api(
 
 #[cfg(test)]
 mod tests {
+
+    use std::str::FromStr;
+
+    use url::Url;
 
     use super::{get_district_from_wegli_api, get_districts_from_wegli_api};
 
@@ -121,7 +127,7 @@ mod tests {
             .await;
 
         let response = get_district_from_wegli_api(
-            &server.url(),
+            &Url::from_str(&server.url()).unwrap(),
             &"any_api_key".to_string(),
             &"91443".to_string(),
             &None,
@@ -178,10 +184,13 @@ mod tests {
             .create_async()
             .await;
 
-        let response =
-            get_districts_from_wegli_api(&server.url(), &"any_api_key".to_string(), &None)
-                .await
-                .unwrap();
+        let response = get_districts_from_wegli_api(
+            &Url::from_str(&server.url()).unwrap(),
+            &"any_api_key".to_string(),
+            &None,
+        )
+        .await
+        .unwrap();
         assert_eq!(&response[0].zip, &"91443".to_string());
         mock.assert();
     }

@@ -1,6 +1,7 @@
 use std::{fs, path::PathBuf};
 
 use anyhow::anyhow;
+use url::Url;
 
 use crate::types::{
     export::{Export, ExportJson},
@@ -14,7 +15,7 @@ use super::{
 };
 
 pub async fn get_exports_from_wegli_api(
-    api_url: &String,
+    api_url: &Url,
     api_token: &String,
     public: bool,
     retry_settings: &Option<RetrySettings>,
@@ -30,7 +31,7 @@ pub async fn get_exports_from_wegli_api(
         .get(format!(
             "{}{}{}",
             api_url,
-            "/exports",
+            "exports",
             if public { "/public" } else { "" }
         ))
         .header("X-API-KEY", api_token);
@@ -61,9 +62,9 @@ pub async fn get_exports_from_wegli_api(
 }
 
 pub async fn download_latest_export_from_wegli(
-    api_url: &String,
+    api_url: &Url,
     api_token: &String,
-    path: &String,
+    path: &Path,
     public: bool,
     unzip: bool,
     retry_settings: &Option<RetrySettings>,
@@ -129,6 +130,10 @@ pub async fn download_latest_export_from_wegli(
 #[cfg(test)]
 mod tests {
 
+    use std::str::FromStr;
+
+    use url::Url;
+
     use super::get_exports_from_wegli_api;
 
     #[tokio::test]
@@ -166,8 +171,12 @@ mod tests {
             .create_async()
             .await;
 
-        let response =
-            get_exports_from_wegli_api(&server.url(), &"any_api_key".to_string(), true, &None)
+        let response = get_exports_from_wegli_api(
+            &Url::from_str(&server.url()).unwrap(),
+            &"any_api_key".to_string(),
+            true,
+            &None,
+        )
                 .await
                 .unwrap();
         assert_eq!(

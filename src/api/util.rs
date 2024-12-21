@@ -8,7 +8,7 @@ use url::Url;
 
 use super::error::{DownloadError, UnzipError};
 
-pub async fn download_to_dir(path: &String, url: &String) -> Result<PathBuf, DownloadError> {
+pub async fn download_to_dir(path: &Path, url: &String) -> Result<PathBuf, DownloadError> {
     let url = match Url::parse(&url) {
         Err(error) => return Err(DownloadError::UrlParse(error)),
         Ok(val) => val,
@@ -33,12 +33,12 @@ pub async fn download_to_dir(path: &String, url: &String) -> Result<PathBuf, Dow
     let mut byte_stream = response.bytes_stream();
 
     while let Some(item) = byte_stream.next().await {
-        let x = match item {
+        let reader = match item {
             Ok(val) => val,
             Err(error) => return Err(DownloadError::Reqwest(error)),
         };
 
-        match tokio::io::copy(&mut x.as_ref(), &mut tmp_file).await {
+        match tokio::io::copy(&mut reader.as_ref(), &mut tmp_file).await {
             Err(error) => return Err(DownloadError::Io(error)),
             Ok(_) => (),
         };
@@ -47,7 +47,7 @@ pub async fn download_to_dir(path: &String, url: &String) -> Result<PathBuf, Dow
     return Ok(fpath);
 }
 
-pub fn unzip_archive(zip_path: &Path, unzip_dir_path: &String) -> Result<(), UnzipError> {
+pub fn unzip_archive(zip_path: &Path, unzip_dir_path: &Path) -> Result<(), UnzipError> {
     let zipfile = match File::open(zip_path) {
         Err(error) => return Err(UnzipError::Io(error)),
         Ok(file) => file,
