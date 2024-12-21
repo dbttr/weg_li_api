@@ -1,4 +1,7 @@
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use anyhow::anyhow;
 use url::Url;
@@ -61,6 +64,43 @@ pub async fn get_exports_from_wegli_api(
     };
 }
 
+pub fn unzip_weg_li_notices_archive(
+    zip_path: &Path,
+    unzip_dir_path: &Path,
+) -> Result<PathBuf, anyhow::Error> {
+    let csv_path = match unzip_archive(&zip_path, &unzip_dir_path) {
+        Err(error) => return Err(anyhow!(error)),
+        Ok(_) => {
+            let paths = match fs::read_dir(&unzip_dir_path) {
+                Err(error) => return Err(anyhow!(error)),
+                Ok(paths) => paths,
+            };
+            let mut found_csv: Option<PathBuf> = None;
+            for dir_entry in paths {
+                match dir_entry {
+                    Err(error) => return Err(anyhow!(error)),
+                    Ok(dir_entry) => {
+                        let file_name = match dir_entry.file_name().into_string() {
+                            Err(os_string) => {
+                                return Err(anyhow!("could not convert to string: {:?}", os_string))
+                            }
+                            Ok(val) => val,
+                        };
+                        if file_name.to_lowercase().ends_with(".csv") {
+                            found_csv = Some(dir_entry.path())
+                        }
+                    }
+                }
+            }
+            match found_csv {
+                Some(val) => val,
+                None => return Err(anyhow!("could not find csv in: {:?}", &unzip_dir_path)),
+            }
+        }
+    };
+    return Ok(csv_path);
+}
+
 pub async fn download_latest_export_from_wegli(
     api_url: &Url,
     api_token: &String,
@@ -88,40 +128,7 @@ pub async fn download_latest_export_from_wegli(
     };
 
     if unzip {
-        let csv_path = match unzip_archive(&download_path, &path) {
-            Err(error) => return Err(anyhow!(error)),
-            Ok(_) => {
-                let paths = match fs::read_dir(&path) {
-                    Err(error) => return Err(anyhow!(error)),
-                    Ok(paths) => paths,
-                };
-                let mut found_csv: Option<PathBuf> = None;
-                for dir_entry in paths {
-                    match dir_entry {
-                        Err(error) => return Err(anyhow!(error)),
-                        Ok(dir_entry) => {
-                            let file_name = match dir_entry.file_name().into_string() {
-                                Err(os_string) => {
-                                    return Err(anyhow!(
-                                        "could not convert to string: {:?}",
-                                        os_string
-                                    ))
-                                }
-                                Ok(val) => val,
-                            };
-                            if file_name.to_lowercase().ends_with(".csv") {
-                                found_csv = Some(dir_entry.path())
-                            }
-                        }
-                    }
-                }
-                match found_csv {
-                    Some(val) => val,
-                    None => return Err(anyhow!("could not find csv in: {:?}", &path)),
-                }
-            }
-        };
-        return Ok(csv_path);
+        return unzip_weg_li_notices_archive(&download_path, &path);
     }
 
     Ok(download_path)
@@ -177,8 +184,8 @@ mod tests {
             true,
             &None,
         )
-                .await
-                .unwrap();
+        .await
+        .unwrap();
         assert_eq!(
             &response[1].download.filename,
             &"notices-47.zip".to_string()
