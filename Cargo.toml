@@ -1,6 +1,6 @@
 [package]
 name = "weg_li_api"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 categories = ["api-bindings"]
 description = "Making working with the weg.li API more convenient"
