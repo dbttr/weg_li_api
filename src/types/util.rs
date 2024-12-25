@@ -18,7 +18,6 @@ const EXPORT_TIMESTAMP_FORMAT: &str = "%Y-%m-%d %H:%M:%S %.3f%z";
 pub fn export_timestamp_to_date_time(
     val: &String,
 ) -> Result<DateTime<FixedOffset>, chrono::format::ParseError> {
-    dbg!(val);
     match DateTime::parse_from_str(val, EXPORT_TIMESTAMP_FORMAT) {
         Ok(val) => return Ok(val),
         Err(error) => return Err(error),

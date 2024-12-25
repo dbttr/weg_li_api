@@ -114,7 +114,6 @@ pub async fn download_latest_export_from_wegli(
             Err(error) => return Err(anyhow!(error)),
             Ok(mut exports) => {
                 exports.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-                dbg!(&exports);
                 match exports.first().cloned() {
                     None => return Err(anyhow!("no export found")),
                     Some(export) => export,
