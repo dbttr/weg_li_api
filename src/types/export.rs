@@ -91,7 +91,7 @@ impl From<&Export> for ExportJson {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ExportNoticeCsv {
     pub start_date: String,
     pub end_date: String,
@@ -103,7 +103,7 @@ pub struct ExportNoticeCsv {
     pub longitude: Option<f64>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ExportNotice {
     pub start_date: DateTime<FixedOffset>,
     pub end_date: DateTime<FixedOffset>,
